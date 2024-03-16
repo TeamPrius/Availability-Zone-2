@@ -26,6 +26,12 @@ resource "aws_instance" "app_server" {
   associate_public_ip_address = true                             # gives public ip address
   vpc_security_group_ids      = [aws_security_group.appsg.id]    # get security group id
 
+  user_data                   = filebase64("./userdata.sh") 
+  metadata_options {
+    http_tokens = "optional"  # optional tokens
+    http_endpoint = "enabled"
+  }
+
   tags = {
     Name = "Business Logic Layer Availability Zone 2"  # creates name
   }
