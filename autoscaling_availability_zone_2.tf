@@ -2,12 +2,13 @@
 
 # launch template
 resource "aws_launch_template" "launch_template_availability_zone_2" {
-  name          = local.launch_template_name
-  image_id      = var.ami
-  instance_type = var.instance_type
+  name          = "launch-template-availability-zone-2"
+  image_id      = data.aws_ami.amazonlinux2023.id 
+  instance_type = "t2.micro"
+  user_data     = filebase64("./userdata.sh")
 
   block_device_mappings {
-    device_name = # add ebs volume here
+    device_name = "/dev/sdf"
 
     ebs {
       volume_size = 5
@@ -15,29 +16,28 @@ resource "aws_launch_template" "launch_template_availability_zone_2" {
   }
 
   network_interfaces {
-    device_index    = 0
-    security_groups = [aws_security_group.asg_security_group.id]
+    associate_public_ip_address = false
+    subnet_id                   = aws_subnet.private_subnet_3.id
+    security_groups             = [aws_security_group.business_logic_layer_sg_availability_zone_2.id]
   }
 
   tag_specifications {
     resource_type = "instance"
 
     tags = {
-      Name = local.launch_template_ec2_name
+      Name = "Launch template availability zone 2"
     }
   }
-
-  user_data = filebase64("${path.module}/install-apache.sh") 
 }
 
 
 #  autoscaling group
 resource "aws_autoscaling_group" "autoscaling_group_availability_zone_2" {
-  desired_capacity    = var.desired_capacity
-  max_size            = var.max_size
-  min_size            = var.min_szie
-  vpc_zone_identifier = ?
-  target_group_arns   = ?
+  desired_capacity    = 1  # desired number of instances at a given time
+  max_size            = 1  # maximum number of instances group should have
+  min_size            = 1  # minimum number of instances group should have
+  vpc_zone_identifier = [aws_subnet.private_subnet_3.id]
+  target_group_arns   = [aws_lb_target_group.prod_vpclb_target_group.arn]
 
   launch_template {
     id      = aws_launch_template.launch_template_availability_zone_2.id
